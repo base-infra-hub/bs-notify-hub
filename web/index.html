@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基建-通知中心 - BS-Notify-Hub</title>
+    <script src="vendor/tailwindcss.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            900: '#0a0f1c',
+                            800: '#111827',
+                            700: '#1f2937',
+                            600: '#374151',
+                        },
+                        primary: {
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                        },
+                        accent: {
+                            blue: '#60a5fa',
+                            cyan: '#22d3ee',
+                            light: '#93c5fd',
+                            red: '#f87171',
+                        }
+                    },
+                    fontFamily: {
+                        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer base {
+            body {
+                @apply bg-dark-900 text-gray-100 overflow-hidden;
+                background-image:
+                    radial-gradient(circle at 15% 25%, rgba(14, 165, 233, 0.15) 0%, transparent 45%),
+                    radial-gradient(circle at 85% 75%, rgba(37, 99, 235, 0.12) 0%, transparent 45%),
+                    radial-gradient(circle at 50% 100%, rgba(2, 132, 199, 0.08) 0%, transparent 50%);
+            }
+        }
+        @layer components {
+            .glass-card {
+                @apply bg-dark-800/70 backdrop-blur-md border border-white/10 rounded-2xl shadow-2xl;
+            }
+            .metric-card {
+                @apply glass-card p-6 relative overflow-hidden transition-all duration-300 hover:border-primary-400/50 hover:shadow-primary-500/20;
+            }
+            .metric-card::before {
+                content: '';
+                @apply absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-600 via-primary-400 to-accent-cyan;
+            }
+            .glow-text {
+                text-shadow: 0 0 25px rgba(14, 165, 233, 0.7);
+            }
+            .chart-container {
+                @apply glass-card p-4;
+            }
+            .status-dot {
+                @apply w-2.5 h-2.5 rounded-full;
+            }
+            .status-dot.online {
+                @apply bg-primary-400 shadow-[0_0_12px_rgba(56,189,248,0.9)];
+                animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            }
+            .status-dot.offline {
+                @apply bg-accent-red shadow-[0_0_10px_rgba(248,113,113,0.8)];
+            }
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+    <!-- Header -->
+    <header class="flex-none px-8 py-5 border-b border-white/10 bg-dark-800/50 backdrop-blur-md">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-lg shadow-primary-500/40">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold tracking-wide bg-gradient-to-r from-white via-primary-200 to-primary-400 bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(56,189,248,0.6)]">
+                        基建-通知中心
+                    </h1>
+                    <p class="text-xs text-gray-400 tracking-widest uppercase">BS-Notify-Hub</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-6 text-sm">
+                <div class="flex items-center gap-2">
+                    <span id="dbDot" class="status-dot offline"></span>
+                    <span class="text-gray-400">DB</span>
+                    <span id="dbText" class="font-medium text-gray-200">检测中</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span id="redisDot" class="status-dot offline"></span>
+                    <span class="text-gray-400">Redis</span>
+                    <span id="redisText" class="font-medium text-gray-200">检测中</span>
+                </div>
+                <div class="flex items-center gap-2 text-gray-400 mr-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span id="uptime">--</span>
+                </div>
+                <!-- 登出按钮 -->
+                <button id="logoutBtn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 hover:border-red-500/50 hover:bg-red-500/10 text-gray-400 hover:text-red-400 transition-all cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                    </svg>
+                    <span>登出</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-6 grid grid-cols-12 gap-6 min-h-0">
+        <!-- Left Column -->
+        <div class="col-span-3 flex flex-col gap-6 min-h-0">
+            <!-- Core Metrics Small -->
+            <div class="metric-card flex-1 flex flex-col justify-center">
+                <div class="text-sm text-gray-400 mb-1">当前订阅连接</div>
+                <div class="text-5xl font-bold font-mono text-white glow-text" id="connections">0</div>
+                <div class="mt-2 text-xs text-primary-400 flex items-center gap-1">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
+                    </svg>
+                    实时监听中
+                </div>
+            </div>
+
+            <div class="metric-card flex-1 flex flex-col justify-center">
+                <div class="text-sm text-gray-400 mb-1">在线租户 / 历史租户</div>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-4xl font-bold font-mono text-white" id="onlineTenants">0</span>
+                    <span class="text-lg text-gray-500">/</span>
+                    <span class="text-2xl font-mono text-gray-400" id="tenantCount">0</span>
+                </div>
+            </div>
+
+            <div class="metric-card flex-1 flex flex-col justify-center">
+                <div class="text-sm text-gray-400 mb-1">在线用户 / 历史用户</div>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-4xl font-bold font-mono text-white" id="onlineUsers">0</span>
+                    <span class="text-lg text-gray-500">/</span>
+                    <span class="text-2xl font-mono text-gray-400" id="userCount">0</span>
+                </div>
+            </div>
+
+            <!-- System Info -->
+            <div class="glass-card p-5 flex-none">
+                <h3 class="text-sm font-semibold text-gray-300 mb-4 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                    </svg>
+                    系统状态
+                </h3>
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Go 版本</span>
+                        <span class="font-mono text-gray-200" id="goVersion">--</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Goroutines</span>
+                        <span class="font-mono text-primary-400" id="goroutines">--</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">内存占用</span>
+                        <span class="font-mono text-primary-400" id="memory">--</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Center Column -->
+        <div class="col-span-6 flex flex-col gap-6 min-h-0">
+            <!-- Tenant Distribution Chart -->
+            <div class="chart-container flex-[2] flex flex-col min-h-0">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-base font-semibold text-gray-200">租户在线分布</h3>
+                    <span class="text-xs text-gray-500">按连接数</span>
+                </div>
+                <div id="tenantChart" class="flex-1 min-h-0"></div>
+            </div>
+
+            <!-- Message Trend Chart -->
+            <div class="chart-container flex-[1] flex flex-col min-h-0">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-base font-semibold text-gray-200">最近消息分发趋势</h3>
+                    <span class="text-xs text-gray-500">最近 10 条</span>
+                </div>
+                <div id="msgChart" class="flex-1 min-h-0"></div>
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="col-span-3 flex flex-col gap-6 min-h-0">
+            <div class="glass-card flex-1 flex flex-col min-h-0">
+                <div class="flex items-center justify-between p-5 border-b border-white/10 flex-none">
+                    <h3 class="text-base font-semibold text-gray-200">最近消息分发</h3>
+                    <span class="text-xs px-2 py-1 rounded-full bg-primary-500/20 text-primary-400">Live</span>
+                </div>
+                <div id="messageList" class="flex-1 overflow-y-auto p-4 space-y-3">
+                    <div class="text-center text-gray-500 py-10 text-sm">暂无消息</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="flex-none px-8 py-3 border-t border-white/10 bg-dark-800/50 backdrop-blur-md">
+        <div class="flex items-center justify-between text-xs text-gray-500">
+            <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-primary-400 animate-pulse shadow-[0_0_10px_rgba(56,189,248,0.9)]"></span>
+                <span>数据每 1 秒自动刷新</span>
+            </div>
+            <span id="lastUpdate">最后更新: --</span>
+        </div>
+    </footer>
+
+    <script src="vendor/echarts.min.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>

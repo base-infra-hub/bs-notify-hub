@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - BS-Notify-Hub 运维中心</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg-900: #0a0f1c;
+            --bg-800: #111827;
+            --bg-700: #1f2937;
+            --primary-400: #38bdf8;
+            --primary-500: #0ea5e9;
+            --primary-600: #0284c7;
+            --accent-cyan: #22d3ee;
+            --text-100: #f3f4f6;
+            --text-400: #9ca3af;
+            --text-500: #6b7280;
+            --red-400: #f87171;
+            --red-500: #ef4444;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-900);
+            color: var(--text-100);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background-image:
+                radial-gradient(circle at 15% 25%, rgba(14, 165, 233, 0.18) 0%, transparent 45%),
+                radial-gradient(circle at 85% 75%, rgba(37, 99, 235, 0.14) 0%, transparent 45%),
+                radial-gradient(circle at 50% 100%, rgba(2, 132, 199, 0.1) 0%, transparent 50%);
+        }
+
+        /* 背景动态粒子网格 */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(56, 189, 248, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(56, 189, 248, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+        }
+
+        .login-wrapper {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 420px;
+            padding: 0 20px;
+        }
+
+        /* Logo / 品牌区 */
+        .brand {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+
+        .brand-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, var(--primary-600), var(--primary-400));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 40px rgba(14, 165, 233, 0.5), 0 0 80px rgba(14, 165, 233, 0.2);
+            animation: iconPulse 3s ease-in-out infinite;
+        }
+
+        @keyframes iconPulse {
+            0%, 100% { box-shadow: 0 0 40px rgba(14, 165, 233, 0.5), 0 0 80px rgba(14, 165, 233, 0.2); }
+            50%       { box-shadow: 0 0 55px rgba(14, 165, 233, 0.7), 0 0 100px rgba(14, 165, 233, 0.3); }
+        }
+
+        .brand-icon svg {
+            width: 32px;
+            height: 32px;
+            color: #fff;
+        }
+
+        .brand-title {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            background: linear-gradient(90deg, #fff 0%, var(--primary-400) 60%, var(--accent-cyan) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: none;
+            filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.5));
+        }
+
+        .brand-sub {
+            margin-top: 6px;
+            font-size: 12px;
+            color: var(--text-500);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        /* 登录卡片 */
+        .login-card {
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 36px 32px;
+            box-shadow:
+                0 25px 50px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(56, 189, 248, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 卡片顶部光条 */
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary-600), var(--primary-400), var(--accent-cyan), transparent);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-400);
+            margin-bottom: 8px;
+            letter-spacing: 0.3px;
+        }
+
+        .input-wrap {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-500);
+            pointer-events: none;
+            transition: color 0.2s;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 14px 12px 42px;
+            background: rgba(31, 41, 55, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            color: var(--text-100);
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+        }
+
+        .form-input::placeholder { color: var(--text-500); }
+
+        .form-input:focus {
+            border-color: rgba(56, 189, 248, 0.5);
+            background: rgba(31, 41, 55, 0.9);
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1), 0 0 15px rgba(56, 189, 248, 0.05);
+        }
+
+        .form-input:focus + .input-icon,
+        .input-wrap:focus-within .input-icon {
+            color: var(--primary-400);
+        }
+
+        /* 让 icon 在 input 后面的情况修正 */
+        .input-wrap .input-icon { pointer-events: none; }
+
+        /* 登录按钮 */
+        .btn-login {
+            width: 100%;
+            padding: 13px;
+            margin-top: 8px;
+            background: linear-gradient(135deg, var(--primary-600), var(--primary-500));
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 15px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.15s, box-shadow 0.2s;
+            box-shadow: 0 4px 20px rgba(14, 165, 233, 0.35);
+        }
+
+        .btn-login::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.08), transparent);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 30px rgba(14, 165, 233, 0.5);
+        }
+
+        .btn-login:hover::after { opacity: 1; }
+
+        .btn-login:active {
+            transform: translateY(0);
+            box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
+        }
+
+        .btn-login:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-login .btn-text { position: relative; z-index: 1; }
+
+        /* 错误提示 */
+        .error-msg {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            margin-top: 16px;
+            padding: 10px 14px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            border-radius: 8px;
+            font-size: 13px;
+            color: var(--red-400);
+            animation: slideIn 0.2s ease;
+        }
+
+        .error-msg.show { display: flex; }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 页脚 */
+        .login-footer {
+            text-align: center;
+            margin-top: 24px;
+            font-size: 12px;
+            color: var(--text-500);
+        }
+
+        /* 加载状态 spinner */
+        .spinner {
+            display: none;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .btn-login.loading .btn-text { display: none; }
+        .btn-login.loading .spinner  { display: block; }
+    </style>
+</head>
+<body>
+    <div class="login-wrapper">
+        <!-- 品牌 -->
+        <div class="brand">
+            <div class="brand-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+            </div>
+            <h1 class="brand-title">基建-通知中心</h1>
+            <p class="brand-sub">BS-Notify-Hub · OPS</p>
+        </div>
+
+        <!-- 登录卡片 -->
+        <div class="login-card">
+            <form id="loginForm" autocomplete="off">
+                <div class="form-group">
+                    <label class="form-label" for="username">用户名</label>
+                    <div class="input-wrap">
+                        <input
+                            id="username"
+                            type="text"
+                            class="form-input"
+                            placeholder="请输入用户名"
+                            autocomplete="username"
+                            required
+                        >
+                        <svg class="input-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="password">密码</label>
+                    <div class="input-wrap">
+                        <input
+                            id="password"
+                            type="password"
+                            class="form-input"
+                            placeholder="请输入密码"
+                            autocomplete="current-password"
+                            required
+                        >
+                        <svg class="input-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-login" id="loginBtn">
+                    <span class="btn-text">登 录</span>
+                    <div class="spinner"></div>
+                </button>
+
+                <div class="error-msg" id="errorMsg">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span id="errorText">用户名或密码错误</span>
+                </div>
+            </form>
+        </div>
+
+        <div class="login-footer">
+            会话有效期 2 小时 &nbsp;·&nbsp; BS-Notify-Hub
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('loginForm');
+        const loginBtn = document.getElementById('loginBtn');
+        const errorMsg = document.getElementById('errorMsg');
+        const errorText = document.getElementById('errorText');
+
+        function setLoading(loading) {
+            loginBtn.disabled = loading;
+            loginBtn.classList.toggle('loading', loading);
+        }
+
+        function showError(msg) {
+            errorText.textContent = msg;
+            errorMsg.classList.add('show');
+        }
+
+        function hideError() {
+            errorMsg.classList.remove('show');
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideError();
+
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+
+            if (!username || !password) {
+                showError('请填写用户名和密码');
+                return;
+            }
+
+            setLoading(true);
+            try {
+                const res = await fetch('/web/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password }),
+                });
+                const data = await res.json();
+                if (data.code === 0) {
+                    window.location.href = '/web';
+                } else {
+                    showError(data.msg || '登录失败，请重试');
+                }
+            } catch (err) {
+                showError('网络错误，请检查连接后重试');
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        // 输入时清除错误提示
+        document.getElementById('username').addEventListener('input', hideError);
+        document.getElementById('password').addEventListener('input', hideError);
+    </script>
+</body>
+</html>

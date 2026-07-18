@@ -1,0 +1,47 @@
+# ======= 编译产物 (Binaries) =======
+bin/
+out/
+# 你的项目编译出的二进制文件名（通常与项目名一致）
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+__debug_bin
+
+# ======= Go 相关 =======
+# 依赖包（如果不使用 vendor 模式可以忽略，但一般建议忽略）
+vendor/
+# 单元测试生成的覆盖率文件
+*.out
+*.test
+# Go 工作区文件
+go.work
+go.work.sum
+
+# ======= Hertz & Proto 相关 =======
+# 如果你希望每个人都本地生成代码，可以忽略生成的代码（视团队习惯而定）
+# biz/model/
+# hertz_gen/
+
+# ======= 配置与敏感信息 (重要！) =======
+# 包含 AES 密钥、数据库密码的配置文件
+.env
+config.yaml
+config.local.yaml
+# 包含秘钥的证书文件
+*.pem
+*.key
+
+# ======= 日志文件 =======
+# 既然你接入了日志库，这些文件不应该进 Git
+*.log
+logs/
+
+# ======= 操作系统与编辑器 =======
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+*.iml

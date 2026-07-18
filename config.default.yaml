@@ -1,0 +1,72 @@
+# ============================================================
+#  BS-Notify-Hub  配置模板
+#  复制此文件为 config.yaml 并填入实际值后启动服务
+# ============================================================
+
+# ── 服务端口 ────────────────────────────────────────────────
+server:
+  http_port: 8080
+  grpc_port: 9090
+
+# ── 系统行为 ────────────────────────────────────────────────
+system:
+  # 租户类通知保留时长（秒），0 表示永久保留
+  tenant_notify_ttl_seconds: 2592000   # 30 天
+  # 用户类通知保留时长（秒），0 表示永久保留
+  user_notify_ttl_seconds: 604800      # 7 天
+  # 是否启用定时清理过期通知（每天凌晨执行）
+  enable_notify_cleanup: true
+
+# ── 鉴权配置 ────────────────────────────────────────────────
+auth:
+  # JWT 服务标识，鉴权分发服务颁发的 JWT 中 tag 字段必须与此值完全一致
+  # 防止其他服务的 JWT 被复用到本服务
+  service_tag: "BS-Notify-Hub"
+
+  # RSA 公钥（由鉴权分发服务提供）
+  # 支持两种格式：
+  #   格式一：完整 PEM（推荐，含 -----BEGIN PUBLIC KEY----- 头尾）
+  #   格式二：裸 Base64 内容（不含头尾）
+  #
+  # 格式一示例（多行 YAML 字面块）：
+  rsa_public_key: |
+    -----BEGIN PUBLIC KEY-----
+    MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA << 替换为实际公钥内容 >>
+    -----END PUBLIC KEY-----
+  #
+  # 格式二示例（裸 Base64，单行）：
+  # rsa_public_key: "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA..."
+
+  # 运维看板登录账号（仅用于 Web 看板，不影响 JWT API）
+  username: "admin"
+  password: "your-strong-password-here"
+
+# ── Ticket 配置（SSE 订阅临时凭证）───────────────────────────
+ticket:
+  # Ticket 有效期（秒），用于 SSE 长连接的一次性凭证
+  expire_seconds: 30
+  # AES 加密密钥（16/24/32 字节对应 AES-128/192/256）
+  ase_key: "your-16-or-32-byte-aes-key-here"
+
+# ── 调度器 ──────────────────────────────────────────────────
+# 当前固定 local 模式，cluster 模式后续扩展
+dispatcher:
+  mode: "local"
+
+# ── Redis ────────────────────────────────────────────────────
+redis:
+  # 支持单机或集群配置。如果是单机只配置一个，集群配置多个种子节点
+  addrs:
+    - "127.0.0.1:6379"
+    # - "127.0.0.1:6380"
+  password: ""
+  db: 0
+
+# ── 数据库（PostgreSQL）─────────────────────────────────────
+database:
+  postgres:
+    host: "127.0.0.1"
+    port: 5432
+    user: "postgres"
+    password: "your-db-password-here"
+    dbname: "bs_notify_hub"

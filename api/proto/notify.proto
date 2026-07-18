@@ -1,0 +1,180 @@
+syntax = "proto3";
+
+package notify;
+
+import "google/protobuf/empty.proto";
+
+//java
+option java_multiple_files = true;
+option java_package = "com.shxy.rpc.notifyhub";
+option java_outer_classname = "NotifyServiceProto";
+//go
+option go_package = "./api/proto";
+
+// NotifyService 通知中心核心服务
+service NotifyService {
+  // SendToUser 一对一发送通知
+  rpc SendToUser(SendToUserReq) returns (SendNotifyRes);
+
+  // SendToUsers 一对多发送通知
+  rpc SendToUsers(SendToUsersReq) returns (SendNotifyRes);
+
+  // SendToAll 租户全员广播通知
+  rpc SendToAll(SendToAllReq) returns (SendNotifyRes);
+
+  // MarkRead 标记通知已读
+  rpc MarkRead(OperateNotifyStatusReq) returns (google.protobuf.Empty);
+
+  // DeleteNotify 删除通知
+  rpc DeleteNotify(OperateNotifyStatusReq) returns (google.protobuf.Empty);
+
+  // ApplyTicket 申请订阅凭证
+  rpc ApplyTicket(ApplyTicketReq) returns (ApplyTicketRes);
+
+  // BatchMarkRead 一键标记通知已读
+  rpc BatchMarkRead(BatchOperateNotifyStatusReq) returns (google.protobuf.Empty);
+
+  // BatchDeleteNotify 一键清空通知
+  rpc BatchDeleteNotify(BatchOperateNotifyStatusReq) returns (google.protobuf.Empty);
+
+  // GetPersonalInbox 查询个人收件箱分页数据
+  rpc GetPersonalInbox(GetInboxReq) returns (GetInboxRes);
+
+  // GetTenantInbox 查询租户收件箱分页数据
+  rpc GetTenantInbox(GetInboxReq) returns (GetInboxRes);
+
+  // GetUserNotifyStats 获取用户个人和租户通知统计（总数与未读数）
+  rpc GetUserNotifyStats(GetUserNotifyStatsReq) returns (GetUserNotifyStatsRes);
+
+  // Connect 测试远端调用连通性
+  rpc Connect(google.protobuf.Empty) returns (ConnectRes);
+}
+
+// 发送通知响应
+message SendNotifyRes {
+  string notify_id = 1;
+  optional string  expire_time = 2; // 为空代表永久不过期，ISO格式
+  int64 ttl_seconds = 3;
+}
+
+// 发送者类型
+enum SenderType {
+  USER = 0;
+  TENANT = 1;
+}
+
+// 一对一发送请求
+message SendToUserReq {
+  string title = 1;      // 标题
+  string content = 2;    // 内容
+  string user_id = 3;    // 目标用户 ID
+  string sender_id = 4;  // 发送者 ID
+  SenderType sender_type = 5; // 发送者类型: 0-用户 1-租户
+  string event_type = 6;  // 事件类型 (透传字段)
+  optional int64 ttl_seconds = 7; // 消息过期时间(秒)，可选
+  string tenant_id = 8;   // 消息所属租户 ID
+}
+
+// 一对多发送请求
+message SendToUsersReq {
+  string title = 1;
+  string content = 2;
+  repeated string user_ids = 3; // 目标用户 ID 列表
+  string sender_id = 4;
+  SenderType sender_type = 5; // 发送者类型: 0-用户 1-租户
+  string event_type = 6;
+  optional int64 ttl_seconds = 7; // 消息过期时间(秒)，可选
+  string tenant_id = 8; // 消息所属租户 ID
+}
+
+// 租户全员发送请求
+message SendToAllReq {
+  string title = 1;
+  string content = 2;
+  string tenant_id = 3; // 目标租户 ID
+  string sender_id = 4;
+  SenderType sender_type = 5; // 发送者类型: 0-用户 1-租户
+  string event_type = 6;
+  optional int64 ttl_seconds = 7; // 消息过期时间(秒)，可选
+}
+
+// 通知状态操作请求（已读/删除）
+message OperateNotifyStatusReq {
+  string notify_id = 1;
+  string user_id = 2;
+  string tenant_id = 3;
+}
+
+// 凭证申请请求
+message ApplyTicketReq {
+  string tenant = 1; // 租户标识
+  string user_id = 2; // 用户标识
+}
+
+// 凭证申请响应
+message ApplyTicketRes {
+  string ticket = 1;
+  string expire_time = 2;
+  string create_time = 3;
+}
+
+// 批量状态操作请求
+message BatchOperateNotifyStatusReq {
+  string user_id = 1;
+  string tenant_id = 2;
+  int32 type = 3; // 0-用户 1-租户
+}
+
+// 收件箱分页查询请求
+message GetInboxReq {
+  string tenant_id = 1;
+  string user_id = 2;
+  int32 page_index = 3;
+  int32 page_size = 4;
+}
+
+// 收件箱通知项
+message InboxItem {
+  string notify_id = 1;
+  string title = 2;
+  string content = 3;
+  int32 sender_type = 4;
+  string sender_id = 5;
+  string event_type = 6;
+  int32 status = 7; // 0-未读 1-已读
+  optional string expire_at = 8;
+  string created_at = 9;
+}
+
+// 收件箱分页查询响应
+message GetInboxRes {
+  int32 page_index = 1;
+  int64 total = 2;
+  int32 page_size = 3;
+  int64 unread = 4;
+  repeated InboxItem list = 5;
+}
+
+// 用户通知统计请求
+message GetUserNotifyStatsReq {
+  string user_id = 1;
+  string tenant_id = 2;
+}
+
+// 通知统计项（总数与未读数）
+message NotifyStats {
+  int64 total = 1;
+  int64 unread = 2;
+}
+
+// 用户通知统计响应
+message GetUserNotifyStatsRes {
+  NotifyStats personal = 1; // 个人通知统计
+  NotifyStats tenant = 2;   // 租户通知统计
+}
+
+// 连通性测试响应
+message ConnectRes {
+  string message = 1;
+}
+
