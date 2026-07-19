@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"bs-notify-hub/internal/dto"
+	"bs-notify-hub/internal/middleware"
 	"bs-notify-hub/internal/service"
 	"bs-notify-hub/pkg/httpcode"
 	"bs-notify-hub/pkg/response"
@@ -45,7 +46,7 @@ func (h *SenderHandler) SendToUser(ctx context.Context, c *app.RequestContext) {
 	prop := service.SendNotifyProp{
 		Title:      req.Title,
 		Content:    req.Content,
-		TenantID:   req.TenantID,
+		TenantID:   middleware.ResolveTenantID(c, req.TenantID),
 		SenderID:   req.SenderID,
 		SenderType: req.SenderType,
 		EventType:  req.EventType,
@@ -77,7 +78,7 @@ func (h *SenderHandler) SendToUsers(ctx context.Context, c *app.RequestContext) 
 	prop := service.SendNotifyProp{
 		Title:      req.Title,
 		Content:    req.Content,
-		TenantID:   req.TenantID,
+		TenantID:   middleware.ResolveTenantID(c, req.TenantID),
 		SenderID:   req.SenderID,
 		SenderType: req.SenderType,
 		EventType:  req.EventType,
@@ -109,7 +110,7 @@ func (h *SenderHandler) Broadcast(ctx context.Context, c *app.RequestContext) {
 	prop := service.SendNotifyProp{
 		Title:      req.Title,
 		Content:    req.Content,
-		TenantID:   req.TenantID,
+		TenantID:   middleware.ResolveTenantID(c, req.TenantID),
 		SenderID:   req.SenderID,
 		SenderType: req.SenderType,
 		EventType:  req.EventType,

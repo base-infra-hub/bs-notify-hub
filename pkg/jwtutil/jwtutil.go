@@ -100,11 +100,12 @@ func ValidateToken(tokenStr string, pubKey *rsa.PublicKey, expectedTag string) (
 		return nil, err
 	}
 
-	// 校验 tag（如果调用方传了期望值）
-	if expectedTag != "" {
-		if err := validateTag(claims, expectedTag); err != nil {
-			return nil, err
-		}
+	// 强制校验 tag，expectedTag 必须非空且与 JWT 中的 tag 完全一致
+	if expectedTag == "" {
+		return nil, errors.New("服务端 service_tag 未配置，拒绝所有 JWT 请求")
+	}
+	if err := validateTag(claims, expectedTag); err != nil {
+		return nil, err
 	}
 
 	return claims, nil

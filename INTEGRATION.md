@@ -27,7 +27,13 @@ auth:
 * **Header**：`alg` 必须为 `RS256`（**不支持且会拒绝** RS384/RS512 或 HS256 等其他算法）。
 * **Payload (荷载)**：
   * `tag` (String)：必须完全等于配置文件中的 `auth.service_tag`（用于防止 Token 被复用到其他不相关的服务上）。
+  * `tenant_id` (String)：**必填。** 绑定第三方所归属的租户空间标识。服务端将强行以此标识做租户多数据隔离，禁止越权操作。
   * `exp` (Numeric/String/Null)：过期时间。如果 `exp` 缺失或为 `null`，本系统将判定此 Token **永不过期**。如果提供了具体时间戳，则严格校验是否已过期。
+
+> [!TIP]
+> **配套授权中心部署建议 (推荐)**：
+> 如果你不想在业务系统里自己写代码或配置私钥签发 JWT，可以直接拉取并部署项目组配套的轻量级非对称密钥授权服务 **[bs-auth](https://github.com/base-infra-hub/bs-auth)**。
+> 在 `bs-auth` 后台管理控制台上，你只需要为该客户端配置对应的服务 Tag（`BS-Notify-Hub`）和它所属的 `tenant_id`，即可一键生成永久有效或设定有效期的 RSA 签名 JWT Token，免去任何编码对接开发。
 
 ### 3. 自己签发 JWT 示例 (Self-issued)
 如果你需要自己编写代码来生成对接 `bs-notify-hub` 的凭证，请务必使用 **RSA 密钥对** 以及 **RS256 算法** 进行签名。
@@ -43,6 +49,7 @@ const privateKey = fs.readFileSync('private.key');
 const token = jwt.sign(
     { 
         tag: 'BS-Notify-Hub', // 必须与服务端的 auth.service_tag 一致
+        tenant_id: 'tenantA',  // 👈 统一新接入规范：必须指定该 Token 允许接入的租户ID
         sub: 'your-client-id'
     }, 
     privateKey, 
@@ -67,11 +74,12 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func GenerateToken(privKey *rsa.PrivateKey, serviceTag string) (string, error) {
+func GenerateToken(privKey *rsa.PrivateKey, serviceTag string, tenantID string) (string, error) {
 	claims := jwt.MapClaims{
-		"tag": serviceTag,                        // 服务匹配标识
-		"sub": "your-client-id",
-		"iat": time.Now().Unix(),
+		"tag":       serviceTag,                    // 服务匹配标识
+		"tenant_id": tenantID,                      // 👈 租户空间硬绑定，防跨租户伪造
+		"sub":       "your-client-id",
+		"iat":       time.Now().Unix(),
 		// "exp": time.Now().Add(time.Hour).Unix(), // 注释掉或设为 null 即代表永不过期
 	}
 

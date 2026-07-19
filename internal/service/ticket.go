@@ -1,7 +1,6 @@
 package service
 
 import (
-	"bs-notify-hub/internal/constant"
 	"bs-notify-hub/pkg/httpcode"
 	"bs-notify-hub/pkg/response"
 	"context"
@@ -21,7 +20,8 @@ import (
 	"github.com/cloudwego/hertz/pkg/common/hlog"
 )
 
-const ticketRedisSpace string = constant.RedisSpace + ":ticket"
+// ticketKeyPrefix 凭证缓存键的业务段前缀（服务命名空间由 redis.WrapKey 统一拼装）
+const ticketKeyPrefix = "ticket"
 
 // TicketContent 凭证载体内容
 type TicketContent struct {
@@ -75,7 +75,7 @@ func (s *TicketService) ApplyTicket(ctx context.Context, tenant, userID string) 
 
 	// 3. 写入 Redis 缓存
 	rdb := redis.GetClient()
-	key := fmt.Sprintf("%s:%s", ticketRedisSpace, ticket)
+	key := redis.WrapKey(fmt.Sprintf("%s:%s", ticketKeyPrefix, ticket))
 	if err := rdb.Set(ctx, key, "1", time.Duration(expireSeconds)*time.Second).Err(); err != nil {
 		hlog.Errorf("[Notify-Ticket] 写入redis缓存失败: %v", err)
 		return "", time.Time{}, time.Time{}, response.NewCodeError(httpcode.InternalError, "保存凭证失败")
@@ -91,7 +91,7 @@ func (s *TicketService) VerifyTicket(ctx context.Context, ticket string) (*Ticke
 	}
 
 	rdb := redis.GetClient()
-	key := fmt.Sprintf("%s:%s", ticketRedisSpace, ticket)
+	key := redis.WrapKey(fmt.Sprintf("%s:%s", ticketKeyPrefix, ticket))
 	// 使用 GetDel 原子性地获取并从 Redis 中销毁
 	_, err := rdb.GetDel(ctx, key).Result()
 	if err != nil {

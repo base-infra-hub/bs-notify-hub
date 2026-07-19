@@ -37,9 +37,12 @@ auth:
   # 格式二示例（裸 Base64，单行）：
   # rsa_public_key: "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA..."
 
-  # 运维看板登录账号（仅用于 Web 看板，不影响 JWT API）
-  username: "admin"
-  password: "your-strong-password-here"
+  # 管理员 Web 监控控制台登录会话管理（仅用于 Web 看板，不影响 JWT API）
+  admin:
+    username: "admin"
+    password: "your-strong-password-here"
+    # 登录状态 Session 有效秒数（默认 2 小时）
+    session_ttl_seconds: 7200
 
 # ── Ticket 配置（SSE 订阅临时凭证）───────────────────────────
 ticket:

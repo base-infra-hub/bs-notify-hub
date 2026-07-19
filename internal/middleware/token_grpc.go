@@ -43,10 +43,15 @@ func TokenInterceptor() grpc.UnaryServerInterceptor {
 			return nil, status.Errorf(codes.Unauthenticated, "authorization 格式错误（应为 Bearer <token>）")
 		}
 
-		_, err := jwtutil.ValidateToken(tokenStr, pubKey, cfg.Auth.ServiceTag)
+		claims, err := jwtutil.ValidateToken(tokenStr, pubKey, cfg.Auth.ServiceTag)
 		if err != nil {
 			return nil, status.Errorf(codes.Unauthenticated, "无效的 JWT 令牌: %v", err)
 		}
+
+		// 从 claims 提取 tenant_id 注入 ctx，键名与 HTTP 侧一致
+		// 兼容旧 token：claims 无 tenant_id 字段或类型异常时注入空串
+		tenantID, _ := claims["tenant_id"].(string)
+		ctx = context.WithValue(ctx, TenantIDKey, tenantID)
 
 		return handler(ctx, req)
 	}

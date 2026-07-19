@@ -32,11 +32,18 @@ type Config struct {
 type AuthConfig struct {
 	// RSAPublicKey RSA 公钥，支持完整 PEM（含头尾）和裸 Base64 两种格式
 	RSAPublicKey string `yaml:"rsa_public_key"`
-	Username     string `yaml:"username"`
-	Password     string `yaml:"password"`
 	// ServiceTag JWT 中 tag 字段必须与此值一致，防止跨服务令牌复用
 	// 默认值：BS-Notify-Hub
-	ServiceTag string `yaml:"service_tag"`
+	ServiceTag string      `yaml:"service_tag"`
+	Admin      AdminConfig `yaml:"admin"`
+}
+
+// AdminConfig 管理员 Web 控制台登录会话配置
+type AdminConfig struct {
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+	// SessionTTLSeconds 登录状态 Session 有效秒数（默认 7200 = 2 小时）
+	SessionTTLSeconds int `yaml:"session_ttl_seconds"`
 }
 
 // GetRSAPublicKey 获取已解析的 RSA 公钥（启动时初始化）
@@ -154,8 +161,9 @@ func (c *Config) PrintConfig() {
 		rsaStatus = fmt.Sprintf("已加载 (%d bit)", c.rsaPublicKey.N.BitLen())
 	}
 	log.Printf("│ auth.rsa_public_key        : %s", rsaStatus)
-	log.Printf("│ auth.username              : %s", c.Auth.Username)
-	log.Printf("│ auth.password              : %s", maskSecret(c.Auth.Password))
+	log.Printf("│ auth.admin.username        : %s", c.Auth.Admin.Username)
+	log.Printf("│ auth.admin.password        : %s", maskSecret(c.Auth.Admin.Password))
+	log.Printf("│ auth.admin.session_ttl     : %ds", c.Auth.Admin.SessionTTLSeconds)
 	log.Println("└────────────────────────────────────────────────────────────────")
 }
 
@@ -207,6 +215,10 @@ func (c *Config) load() error {
 		log.Printf("[配置] RSA 公钥解析成功 (%d bit)", pubKey.N.BitLen())
 	} else {
 		log.Printf("[配置] 警告：未配置 RSA 公钥，JWT 鉴权将拒绝所有请求")
+	}
+
+	if c.Auth.ServiceTag == "" {
+		return fmt.Errorf("auth.service_tag 不得为空，必须填写本服务的 JWT tag 标识（如 \"BS-Notify-Hub\"），防止其他服务的 JWT 越权访问")
 	}
 
 	log.Printf("[配置] 已加载配置文件: %s", externalPath)

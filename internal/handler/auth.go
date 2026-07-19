@@ -3,10 +3,11 @@ package handler
 import (
 	"context"
 	"net/http"
-	"time"
 
 	"bs-notify-hub/internal/conf"
 	"bs-notify-hub/internal/middleware"
+	"bs-notify-hub/pkg/httpcode"
+	"bs-notify-hub/pkg/response"
 	"bs-notify-hub/pkg/session"
 
 	"github.com/cloudwego/hertz/pkg/app"
@@ -41,30 +42,32 @@ func (h *AuthHandler) Login(ctx context.Context, c *app.RequestContext) {
 		Password string `json:"password" form:"password"`
 	}
 	if err := c.BindAndValidate(&body); err != nil {
-		c.JSON(http.StatusBadRequest, map[string]interface{}{
-			"code": 400,
-			"msg":  "请求参数错误",
+		c.JSON(http.StatusBadRequest, response.Body{
+			Code:    httpcode.BadRequest,
+			Msg:     "请求参数错误",
+			TraceID: response.GetTraceID(ctx),
 		})
 		return
 	}
 
 	cfg := conf.GetConfig()
-	if body.Username != cfg.Auth.Username || body.Password != cfg.Auth.Password {
-		c.JSON(http.StatusUnauthorized, map[string]interface{}{
-			"code": 401,
-			"msg":  "用户名或密码错误",
+	if body.Username != cfg.Auth.Admin.Username || body.Password != cfg.Auth.Admin.Password {
+		c.JSON(http.StatusUnauthorized, response.Body{
+			Code:    httpcode.Unauthorized,
+			Msg:     "用户名或密码错误",
+			TraceID: response.GetTraceID(ctx),
 		})
 		return
 	}
 
-	// 创建 session
-	sessionID := session.GetStore().Create()
+	// 创建 session（管理员控制台会话不绑定租户，TenantID 为空串）
+	sessionID := session.GetStore().Create("")
 
-	// 设置 Cookie：2小时过期，HttpOnly，SameSite=Lax
+	// 设置 Cookie：有效期与 Session TTL 一致，HttpOnly，SameSite=Lax
 	c.SetCookie(
 		middleware.SessionCookieName,
 		sessionID,
-		int(2*time.Hour/time.Second), // MaxAge 秒
+		session.TTLSeconds(), // MaxAge 秒
 		"/",
 		"",
 		protocol.CookieSameSiteLaxMode,
@@ -72,10 +75,7 @@ func (h *AuthHandler) Login(ctx context.Context, c *app.RequestContext) {
 		true,  // HttpOnly
 	)
 
-	c.JSON(http.StatusOK, map[string]interface{}{
-		"code": 0,
-		"msg":  "登录成功",
-	})
+	response.OkResp(ctx, c, "登录成功", nil)
 }
 
 // Logout POST /logout — 销毁 Session
@@ -86,8 +86,5 @@ func (h *AuthHandler) Logout(ctx context.Context, c *app.RequestContext) {
 	}
 	// 清除 Cookie
 	c.SetCookie(middleware.SessionCookieName, "", -1, "/", "", protocol.CookieSameSiteLaxMode, false, true)
-	c.JSON(http.StatusOK, map[string]interface{}{
-		"code": 0,
-		"msg":  "已登出",
-	})
+	response.OkResp(ctx, c, "已登出", nil)
 }

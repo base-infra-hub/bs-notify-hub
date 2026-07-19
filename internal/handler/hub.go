@@ -2,6 +2,7 @@ package handler
 
 import (
 	"bs-notify-hub/internal/dto"
+	"bs-notify-hub/internal/middleware"
 	"bs-notify-hub/internal/service"
 	"bs-notify-hub/pkg/httpcode"
 	"bs-notify-hub/pkg/response"
@@ -61,7 +62,7 @@ func (h *HubHandler) ApplyTicket(ctx context.Context, c *app.RequestContext) {
 
 		return
 	}
-	tkt, exp, cre, err := h.ticketSvc.ApplyTicket(ctx, req.Tenant, req.UserID)
+	tkt, exp, cre, err := h.ticketSvc.ApplyTicket(ctx, middleware.ResolveTenantID(c, req.Tenant), req.UserID)
 	if err != nil {
 		response.ErrResp(ctx, c, err)
 		return

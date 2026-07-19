@@ -9,7 +9,7 @@ import (
 	"github.com/cloudwego/hertz/pkg/app"
 )
 
-const sessionCookieName = "bs_session"
+const sessionCookieName = "sessionId"
 
 // SessionMiddleware 校验请求必须携带有效的 Session Cookie
 // 无效或缺失时：API 请求返回 401，页面请求重定向到 /login

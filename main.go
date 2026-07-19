@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	"io"
+	"io/fs"
 	"mime"
 	"net/http"
 	"path/filepath"
@@ -21,6 +22,7 @@ import (
 	"bs-notify-hub/internal/logger"
 	"bs-notify-hub/internal/middleware"
 	"bs-notify-hub/internal/service"
+	"bs-notify-hub/pkg/session"
 
 	hertzApp "github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/app/server"
@@ -36,6 +38,8 @@ func main() {
 		waitAndExit()
 		return
 	}
+	// 按配置初始化控制台 Session 有效期（未配置时保持默认 2 小时）
+	session.InitTTL(cfg.Auth.Admin.SessionTTLSeconds)
 	if err := logger.Init(); err != nil {
 		log.Printf("[日志错误] 初始化日志失败: %v", err)
 		waitAndExit()
@@ -94,8 +98,18 @@ func main() {
 	h.Spin()
 }
 
-//go:embed web/*
-var webFS embed.FS
+//go:embed all:dist
+var distFiles embed.FS
+
+var distFS fs.FS
+
+func init() {
+	var err error
+	distFS, err = fs.Sub(distFiles, "dist")
+	if err != nil {
+		log.Fatalf("初始化嵌入 dist 目录失败: %v", err)
+	}
+}
 
 // serveDashboardStatic 服务嵌入的看板静态资源
 func serveDashboardStatic(ctx context.Context, c *hertzApp.RequestContext) {
@@ -114,7 +128,7 @@ func serveDashboardStatic(ctx context.Context, c *hertzApp.RequestContext) {
 	}
 
 	cleanPath := strings.TrimPrefix(path, "/")
-	file, err := webFS.Open("web/" + cleanPath)
+	file, err := distFS.Open(cleanPath)
 	if err != nil {
 		c.SetStatusCode(404)
 		c.SetBodyString("Not Found")
@@ -211,8 +225,8 @@ func registerRoutes(h *server.Hertz) {
 	senderHandler := handler.GetSenderHandler()
 	inboxHandler := handler.GetInboxHandler()
 
-	// /v1 统一挂载跨域中间件 + JWT 令牌校验（全部业务接口）
-	v1 := h.Group("/v1", cors.Default(), middleware.TokenMiddleware())
+	// /v1 统一挂载跨域中间件 + 双轨鉴权（第三方 JWT 或控制台 Session 均可调用）
+	v1 := h.Group("/v1", cors.Default(), middleware.AuthMiddleware())
 	{
 		sender := v1.Group("/sender")
 		{

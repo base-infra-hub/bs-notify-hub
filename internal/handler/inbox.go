@@ -2,6 +2,7 @@ package handler
 
 import (
 	"bs-notify-hub/internal/dto"
+	"bs-notify-hub/internal/middleware"
 	"bs-notify-hub/internal/service"
 	"bs-notify-hub/pkg/httpcode"
 	"bs-notify-hub/pkg/response"
@@ -40,6 +41,9 @@ func (h *InboxHandler) GetPersonalPage(ctx context.Context, c *app.RequestContex
 		return
 	}
 
+	// 优先使用中间件从可信凭证注入的 tenant_id，取不到时回退请求体（兼容旧 token 过渡期）
+	req.TenantID = middleware.ResolveTenantID(c, req.TenantID)
+
 	pageRes, err := h.inboxSvc.GetPersonalPageHttp(ctx, &req)
 	if err != nil {
 		response.ErrResp(ctx, c, err)
@@ -56,6 +60,9 @@ func (h *InboxHandler) GetTenantPage(ctx context.Context, c *app.RequestContext)
 		response.ErrResp(ctx, c, response.NewCodeError(httpcode.BadRequest, "参数验证失败"))
 		return
 	}
+
+	// 优先使用中间件从可信凭证注入的 tenant_id，取不到时回退请求体（兼容旧 token 过渡期）
+	req.TenantID = middleware.ResolveTenantID(c, req.TenantID)
 
 	pageRes, err := h.inboxSvc.GetTenantPageHttp(ctx, &req)
 	if err != nil {

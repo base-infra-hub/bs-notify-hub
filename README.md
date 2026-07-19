@@ -73,7 +73,7 @@
 ├── go.mod                      # Go 依赖描述
 ├── config.default.yaml         # 默认配置模板文件
 ├── api/                        # Protobuf 定义及生成的 gRPC 桩代码 (pb.go)
-├── web/                        # 看板前端源码与静态资源
+├── dist/                       # 看板前端源码与静态资源 (统一物理目录为 dist)
 │   ├── index.html              # 看板主页面
 │   ├── login.html              # 看板登录页面
 │   └── js/                     # 轮询渲染和页面控制逻辑
@@ -127,4 +127,4 @@ go build -ldflags="-s -w" -o bs-notify-hub.exe main.go
 
 ## 🔌 接入与整合文档
 
-* 系统完整的 API 列表、JWT 签名格式、gRPC 桩代码调用与 SSE 建立流程，请参阅独立的 [接入整合文档 (INTEGRATION.md)](file:///F:/ideaWork/company/bs/bs-notify-hub/INTEGRATION.md)。
+* 系统完整的 API 列表、JWT 签名格式、gRPC 桩代码调用与 SSE 建立流程，请参阅独立的 [接入整合文档 (INTEGRATION.md)](./INTEGRATION.md)。

@@ -6,6 +6,7 @@ import (
 
 	"bs-notify-hub/internal/constant"
 	"bs-notify-hub/internal/dto"
+	"bs-notify-hub/internal/middleware"
 	"bs-notify-hub/internal/service"
 	"bs-notify-hub/pkg/httpcode"
 	"bs-notify-hub/pkg/response"
@@ -43,7 +44,7 @@ func (h *StatusHandler) MarkRead(ctx context.Context, c *app.RequestContext) {
 		return
 	}
 
-	if err := h.statusSvc.MarkRead(ctx, req.NotifyID, req.UserID, req.TenantID); err != nil {
+	if err := h.statusSvc.MarkRead(ctx, req.NotifyID, req.UserID, middleware.ResolveTenantID(c, req.TenantID)); err != nil {
 		response.ErrResp(ctx, c, err)
 		return
 	}
@@ -60,10 +61,11 @@ func (h *StatusHandler) BatchMarkRead(ctx context.Context, c *app.RequestContext
 	}
 
 	var err *response.CodeError
+	tenantID := middleware.ResolveTenantID(c, req.TenantID)
 	if req.Type == int8(constant.NotifyCategoryTenant) {
-		err = h.statusSvc.TenantBatchMarkRead(ctx, req.UserID, req.TenantID)
+		err = h.statusSvc.TenantBatchMarkRead(ctx, req.UserID, tenantID)
 	} else {
-		err = h.statusSvc.UserBatchMarkRead(ctx, req.UserID, req.TenantID)
+		err = h.statusSvc.UserBatchMarkRead(ctx, req.UserID, tenantID)
 	}
 
 	if err != nil {
@@ -82,7 +84,7 @@ func (h *StatusHandler) DeleteNotify(ctx context.Context, c *app.RequestContext)
 		return
 	}
 
-	if err := h.statusSvc.DeleteNotify(ctx, req.NotifyID, req.UserID, req.TenantID); err != nil {
+	if err := h.statusSvc.DeleteNotify(ctx, req.NotifyID, req.UserID, middleware.ResolveTenantID(c, req.TenantID)); err != nil {
 		response.ErrResp(ctx, c, err)
 		return
 	}
@@ -99,10 +101,11 @@ func (h *StatusHandler) BatchDeleteNotify(ctx context.Context, c *app.RequestCon
 	}
 
 	var err *response.CodeError
+	tenantID := middleware.ResolveTenantID(c, req.TenantID)
 	if req.Type == int8(constant.NotifyCategoryTenant) {
-		err = h.statusSvc.TenantBatchDelete(ctx, req.UserID, req.TenantID)
+		err = h.statusSvc.TenantBatchDelete(ctx, req.UserID, tenantID)
 	} else {
-		err = h.statusSvc.UserBatchDelete(ctx, req.UserID, req.TenantID)
+		err = h.statusSvc.UserBatchDelete(ctx, req.UserID, tenantID)
 	}
 
 	if err != nil {
